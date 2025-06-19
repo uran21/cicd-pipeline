@@ -5,13 +5,25 @@ pipeline {
         IMAGE_TAG = "v1.0"
         IMAGE_NAME = "uran21/cicd-pipeline"
         PORT = ""
-        LOGO_PATH = "src/logo.svg"  // Путь к логотипу
+        LOGO_PATH = "src/logo.svg"
     }
 
     stages {
         stage('Checkout') {
             steps {
                 git branch: "${BRANCH_NAME}", url: 'https://github.com/uran21/cicd-pipeline'
+            }
+        }
+
+        stage('Install Node.js') {
+            steps {
+                script {
+                    echo "Installing Node.js and npm..."
+                    sh """
+                    curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
+                    sudo apt-get install -y nodejs
+                    """
+                }
             }
         }
 
@@ -57,12 +69,12 @@ pipeline {
             steps {
                 script {
                     echo "Deploying application to port ${PORT} with logo: ${LOGO_PATH}..."
-                    
+
                     // Запуск Docker-контейнера
                     sh """
                     docker run -d -p ${PORT}:${PORT} ${IMAGE_NAME}:${IMAGE_TAG}
                     """
-                    
+
                     // Копирование логотипа в приложение
                     sh """
                     cp ${LOGO_PATH} ${WORKSPACE}/public/logo.svg
