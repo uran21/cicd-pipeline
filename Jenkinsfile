@@ -3,9 +3,9 @@ pipeline {
 
     environment {
         IMAGE_TAG = "v1.0"
-        IMAGE_NAME = "uran21/"
+        IMAGE_NAME = "uran21/cicd-pipeline"
         PORT = ""
-        LOGO_PATH = "logo.svg"
+        LOGO_PATH = "src/logo.svg"  // Путь к логотипу
     }
 
     stages {
@@ -19,7 +19,7 @@ pipeline {
             steps {
                 script {
                     echo "Building the application..."
-                    // Добавьте команды для сборки вашего приложения, например, npm build или другие
+                    sh 'npm install' // Установка зависимостей
                 }
             }
         }
@@ -28,7 +28,7 @@ pipeline {
             steps {
                 script {
                     echo "Running tests..."
-                    // Ваши команды для тестирования приложения
+                    sh 'npm test' // Запуск тестов
                 }
             }
         }
@@ -39,11 +39,13 @@ pipeline {
                     echo "Building Docker image for ${BRANCH_NAME}..."
                     if (BRANCH_NAME == "main") {
                         PORT = "3000"
-                        LOGO_PATH = "main.svg"
+                        LOGO_PATH = "src/main.svg"  // Логотип для main ветки
                     } else if (BRANCH_NAME == "dev") {
                         PORT = "3001"
-                        LOGO_PATH = "dev.svg"
+                        LOGO_PATH = "src/dev.svg"  // Логотип для dev ветки
                     }
+
+                    // Сборка Docker-образа
                     sh """
                     docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
                     """
@@ -55,11 +57,15 @@ pipeline {
             steps {
                 script {
                     echo "Deploying application to port ${PORT} with logo: ${LOGO_PATH}..."
+                    
+                    // Запуск Docker-контейнера
                     sh """
                     docker run -d -p ${PORT}:${PORT} ${IMAGE_NAME}:${IMAGE_TAG}
                     """
+                    
+                    // Копирование логотипа в приложение
                     sh """
-                    cp ${LOGO_PATH} path/to/application/logo.svg
+                    cp ${LOGO_PATH} ${WORKSPACE}/public/logo.svg
                     """
                 }
             }
@@ -68,7 +74,7 @@ pipeline {
 
     post {
         always {
-            cleanWs()
+            cleanWs() // Очистка рабочего пространства после выполнения
         }
     }
 }
