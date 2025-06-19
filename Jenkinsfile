@@ -65,16 +65,51 @@ pipeline {
             }
         }
 
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                script {
+                    // Используем креденшелс для Docker Hub
+                    withCredentials([usernamePassword(credentialsId: 'docker-cicd', usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        echo "Pushing Docker image to Docker Hub..."
+                        sh "docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD"
+                        sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} $DOCKER_USERNAME/cicd-pipeline:${IMAGE_TAG}"
+                        sh "docker push $DOCKER_USERNAME/cicd-pipeline:${IMAGE_TAG}"
+                    }
+                }
+            }
+        }
+
+        stage('Stop and Remove Existing Containers') {
+            steps {
+                script {
+                    def containerId
+                    if (env.BRANCH_NAME == 'main') {
+                        containerId = sh(script: "docker ps -q --filter 'name=nodemain'", returnStdout: true).trim()
+                        if (containerId) {
+                            echo "Stopping and removing existing main container: $containerId"
+                            sh "docker stop $containerId"
+                            sh "docker rm $containerId"
+                        }
+                    } else if (env.BRANCH_NAME == 'dev') {
+                        containerId = sh(script: "docker ps -q --filter 'name=nodedev'", returnStdout: true).trim()
+                        if (containerId) {
+                            echo "Stopping and removing existing dev container: $containerId"
+                            sh "docker stop $containerId"
+                            sh "docker rm $containerId"
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
                 script {
                     echo "Deploying application to port ${PORT} with logo: ${LOGO_PATH}..."
-                    
                     // Запуск Docker-контейнера
                     sh """
                     docker run -d -p ${PORT}:${PORT} ${IMAGE_NAME}:${IMAGE_TAG}
                     """
-                    
                     // Копирование логотипа в приложение
                     sh """
                     cp ${LOGO_PATH} ${WORKSPACE}/public/logo.svg
@@ -82,6 +117,7 @@ pipeline {
                 }
             }
         }
+
     }
 
     post {
