@@ -1,0 +1,17 @@
+# Dockerfile.jenkins
+
+# Используем легкий официальный образ агента Jenkins на базе Alpine Linux с JDK 17.
+FROM jenkins/agent:latest-jdk17-alpine
+
+# Устанавливаем необходимые пакеты для работы пайплайна:
+# git: для клонирования репозиториев.
+# docker: для выполнения команд docker (build, run, cp).
+# curl: может быть полезен для сетевых запросов.
+RUN apk add --no-cache \
+    git \
+    docker \
+    curl
+
+# Добавляем стандартного пользователя 'jenkins' в группу 'docker'.
+# Это абсолютно необходимо, чтобы агент мог выполнять команды 'docker' на хосте.
+RUN addgroup jenkins docker
