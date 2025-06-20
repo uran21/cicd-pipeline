@@ -1,5 +1,5 @@
 # Dockerfile
-FROM node:18-alpine # Или node:20-alpine для еще более новой версии
+FROM node:18-alpine
 
 WORKDIR /opt
 ADD . /opt
