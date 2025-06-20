@@ -1,5 +1,9 @@
-FROM node:7.8.0
+# Dockerfile
+FROM node:18-alpine # Или node:20-alpine для еще более новой версии
+
 WORKDIR /opt
 ADD . /opt
 RUN npm install
-ENTRYPOINT npm run start
+
+EXPOSE 3000
+CMD ["node", "src/index.js"]
